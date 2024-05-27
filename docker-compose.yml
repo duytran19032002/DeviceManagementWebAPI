@@ -1,0 +1,41 @@
+version: "3.8" 
+services:
+  equipmentdb:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    container_name: equipmentdb
+    environment:
+      SA_PASSWORD: "Passw0rd!"
+      ACCEPT_EULA: "Y"
+    restart: always
+    volumes:
+       - sqlserver:/var/lib/mssql/equipment
+    ports:
+      - "1432:1433"
+    networks:
+      - equipmentdocker
+
+
+  equipment.api:
+    image: mcr.microsoft.com/dotnet/aspnet:6.0
+    build:
+      context: . 
+      dockerfile: EquipmentManagement.API/Dockerfile
+    container_name: equipment.api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:80
+      - "ConnectionStrings:Fablab=Server=equipmentdb,1433;Initial Catalog=equipment;User ID=sa;Password=Passw0rd!;TrustServerCertificate=True"
+    depends_on: 
+      - equipmentdb
+    ports:
+      - "6002:80"
+    networks:
+      - equipmentdocker
+    restart: always 
+volumes:
+  sqlserver:
+    name: sqlserver
+networks:
+   equipmentdocker:
+       name: equipmentdocker
+       driver: bridge
